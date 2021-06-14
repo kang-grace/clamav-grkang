@@ -189,6 +189,12 @@ static void help(void)
     printf("    --on-error-execute=COMMAND           Execute COMMAND if errors occurred\n");
     printf("    --on-outdated-execute=COMMAND        Execute COMMAND when software is outdated\n");
     printf("    --update-db=DBNAME                   Only update database DBNAME\n");
+#ifdef _WIN32
+    printf("\nWindows Service:\n");
+    printf("    --daemon                             Start in Service mode (internal)\n");
+    printf("    --install                            Install Windows Service\n");
+    printf("    --uninstall                          Uninstall Windows Service\n");
+#endif
     printf("\n");
 }
 
@@ -1595,6 +1601,20 @@ int main(int argc, char **argv)
         status = FC_SUCCESS;
         goto done;
     }
+    
+#ifdef _WIN32
+    if (optget(opts, "daemon")->enabled) {
+        logg("daemon option enabled\n");
+    }
+
+    if (optget(opts, "install")->enabled) {
+        logg("install Windows service option enabled\n");
+    }
+    
+    if (optget(opts, "uninstall")->enabled) {
+        logg("uninstall Windows service option enabled\n");
+    }
+#endif 
 
     /* check foreground option from command line to override config file */
     for (i = 0; i < argc; i += 1) {
