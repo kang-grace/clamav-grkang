@@ -201,8 +201,8 @@ const struct clam_option __clam_options[] = {
     {NULL, "archive-verbose", 'a', CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMSCAN, "", ""},
 
 #ifdef _WIN32
-    {NULL, "install", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
-    {NULL, "uninstall", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
+    {NULL, "install-service", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
+    {NULL, "uninstall-service", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
     {NULL, "daemon", 'd', CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "", ""},
 #endif
 

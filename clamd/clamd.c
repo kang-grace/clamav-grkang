@@ -75,6 +75,10 @@
 #include "shared.h"
 #include "scanner.h"
 
+#ifdef _WIN32
+#include "service.h"
+#endif
+
 #include <sys/types.h>
 #ifndef WIN32
 #include <sys/wait.h>
@@ -94,18 +98,16 @@ static void help(void)
     printf("\n");
     printf("    --help                   -h             Show this help\n");
     printf("    --version                -V             Show version number\n");
+#ifdef _WIN32
+    printf("    --install-service                       Install Windows Service\n");
+    printf("    --uninstall-service                     Uninstall Windows Service\n");
+#endif
     printf("    --foreground             -F             Run in foreground; do not daemonize\n");
     printf("    --debug                                 Enable debug mode\n");
     printf("    --log=FILE               -l FILE        Log into FILE\n");
     printf("    --config-file=FILE       -c FILE        Read configuration from FILE\n");
     printf("\n");
     printf("Pass in - as the filename for stdin.\n");
-    #ifdef _WIN32
-    printf("Windows Service:\n");
-    printf("    --daemon                                Start in Service mode (internal)\n");
-    printf("    --install                               Install Windows Service\n");
-    printf("    --uninstall                             Uninstall Windows Service\n");
-    #endif
     printf("\n");
 }
 
@@ -324,21 +326,6 @@ int main(int argc, char **argv)
         }
         umask(old_umask);
 
-    /* windows command line options */
-#ifdef _WIN32
-    if (optget(opts, "daemon")->enabled) {
-        logg("daemon option enabled\n");
-    }
-
-    if (optget(opts, "install")->enabled) {
-        logg("install Windows service option enabled\n");
-    }
-    
-    if (optget(opts, "uninstall")->enabled) {
-        logg("uninstall Windows service option enabled\n");
-    }
-#endif
-
 #ifndef _WIN32
         /*If the file has already been created by a different user, it will just be
          * rewritten by us, but not change the ownership, so do that explicitly.
@@ -353,6 +340,23 @@ int main(int argc, char **argv)
         }
 #endif /* _WIN32 */
     }
+
+    /* windows command line options */
+#ifdef _WIN32
+
+    if (optget(opts, "install-service")->enabled) {
+        svc_install("clamd", "ClamAV ClamD",
+                    "Provides virus scanning facilities for ClamAV");
+        optfree(opts);
+        return 0;
+    }
+
+    if (optget(opts, "uninstall-service")->enabled) {
+        svc_uninstall("clamd", 1);
+        optfree(opts);
+        return 0;
+    }
+#endif
 
     /* drop privileges */
 #ifndef _WIN32
@@ -642,6 +646,13 @@ int main(int argc, char **argv)
             logg("#Max A-C depth set to %u\n", (unsigned int)opt->numarg);
         }
 
+#ifdef _WIN32
+        if (optget(opts, "daemon")->enabled) {
+            cl_engine_set_clcb_sigload(engine, svc_checkpoint, NULL);
+            svc_register("clamd");
+        }
+#endif
+
         if ((ret = cl_load(dbdir, engine, &sigs, dboptions))) {
             logg("!%s\n", cl_strerror(ret));
             ret = 1;
@@ -810,6 +821,11 @@ int main(int argc, char **argv)
 #endif
         }
 
+#elif defined(_WIN32)
+        if (optget(opts, "daemon")->enabled) {
+            cl_engine_set_clcb_sigload(engine, NULL, NULL);
+            svc_ready();
+        }
 #endif
 
         if (nlsockets == 0) {

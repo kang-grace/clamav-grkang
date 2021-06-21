@@ -60,6 +60,10 @@
 #include "output.h"
 #include "misc.h"
 
+#ifdef _WIN32
+#include "service.h"
+#endif
+
 // libfreshclam
 #include "libfreshclam.h"
 
@@ -173,6 +177,10 @@ static void help(void)
     printf("\n");
     printf("    --config-file=FILE                   Read configuration from FILE.\n");
     printf("    --log=FILE           -l FILE         Log into FILE\n");
+#ifdef _WIN32
+    printf("    --install-service                    Install Windows Service\n");
+    printf("    --uninstall-service                  Uninstall Windows Service\n");
+#endif
     printf("    --daemon             -d              Run in daemon mode\n");
     printf("    --pid=FILE           -p FILE         Save daemon's pid in FILE\n");
 #ifndef _WIN32
@@ -189,12 +197,6 @@ static void help(void)
     printf("    --on-error-execute=COMMAND           Execute COMMAND if errors occurred\n");
     printf("    --on-outdated-execute=COMMAND        Execute COMMAND when software is outdated\n");
     printf("    --update-db=DBNAME                   Only update database DBNAME\n");
-#ifdef _WIN32
-    printf("\nWindows Service:\n");
-    printf("    --daemon                             Start in Service mode (internal)\n");
-    printf("    --install                            Install Windows Service\n");
-    printf("    --uninstall                          Uninstall Windows Service\n");
-#endif
     printf("\n");
 }
 
@@ -1601,20 +1603,22 @@ int main(int argc, char **argv)
         status = FC_SUCCESS;
         goto done;
     }
-    
+
 #ifdef _WIN32
-    if (optget(opts, "daemon")->enabled) {
-        logg("daemon option enabled\n");
+
+    if (optget(opts, "install-service")->enabled) {
+        svc_install("freshclam", "ClamAV FreshClam",
+                    "Updates virus pattern database for ClamAV");
+        optfree(opts);
+        return 0;
     }
 
-    if (optget(opts, "install")->enabled) {
-        logg("install Windows service option enabled\n");
+    if (optget(opts, "uninstall-service")->enabled) {
+        svc_uninstall("freshclam", 1);
+        optfree(opts);
+        return 0;
     }
-    
-    if (optget(opts, "uninstall")->enabled) {
-        logg("uninstall Windows service option enabled\n");
-    }
-#endif 
+#endif
 
     /* check foreground option from command line to override config file */
     for (i = 0; i < argc; i += 1) {
@@ -1898,6 +1902,12 @@ int main(int argc, char **argv)
             }
             mprintf_disabled = 1;
         }
+#endif
+
+#ifdef _WIN32
+        mprintf_disabled = 1;
+        svc_register("freshclam");
+        svc_ready();
 #endif
 
         /* Write PID of daemon process to pidfile. */
