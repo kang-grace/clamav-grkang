@@ -90,9 +90,9 @@ int svc_install(const char *name, const char *dname, const char *desc)
     }
 
     if (strchr(modulepath, ' '))
-        snprintf(binpath, MAX_PATH - 1, "\"%s\" --daemon", modulepath);
+        snprintf(binpath, MAX_PATH - 1, "\"%s\" --daemon --service-mode", modulepath);
     else
-        snprintf(binpath, MAX_PATH - 1, "%s --daemon", modulepath);
+        snprintf(binpath, MAX_PATH - 1, "%s --daemon --service-mode", modulepath);
 
     svc = CreateServiceA(sm, name, dname, SERVICE_CHANGE_CONFIG,
                          SERVICE_WIN32_OWN_PROCESS,

@@ -204,6 +204,7 @@ const struct clam_option __clam_options[] = {
     {NULL, "install-service", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
     {NULL, "uninstall-service", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
     {NULL, "daemon", 'd', CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "", ""},
+    {NULL, "service-mode", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_FRESHCLAM, "", ""},
 #endif
 
     /* cmdline only - deprecated */

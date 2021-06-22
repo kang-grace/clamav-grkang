@@ -1905,9 +1905,11 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef _WIN32
-        mprintf_disabled = 1;
-        svc_register("freshclam");
-        svc_ready();
+        if (optget(opts, "service-mode")->enabled) {
+            mprintf_disabled = 1;
+            svc_register("freshclam");
+            svc_ready();
+        }
 #endif
 
         /* Write PID of daemon process to pidfile. */
