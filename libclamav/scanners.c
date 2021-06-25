@@ -3122,6 +3122,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
         (type != CL_TYPE_GPT) &&       /* Omit GPT files because it's an image format that we can extract and scan manually. */
         (type != CL_TYPE_CPIO_OLD) &&  /* Omit CPIO_OLD files because it's an image format that we can extract and scan manually. */
         (type != CL_TYPE_ZIP) &&       /* Omit ZIP files because it'll detect each zip file entry as SFXZIP, which is a waste. We'll extract it and then scan. */
+        (type != CL_TYPE_ZIPSFX) &&    /* Omit ZIPSFX files because we should've already detected each entry with embedded file type recognition already! */
         (type != CL_TYPE_OLD_TAR) &&   /* Omit OLD TAR files because it's a raw archive format that we can extract and scan manually. */
         (type != CL_TYPE_POSIX_TAR)) { /* Omit POSIX TAR files because it's a raw archive format that we can extract and scan manually. */
         /*
@@ -3591,6 +3592,7 @@ static cl_error_t dispatch_prescan_callback(clcb_pre_scan cb, cli_ctx *ctx, cons
 cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 {
     cl_error_t ret = CL_CLEAN;
+    cl_error_t res;
     cl_error_t cb_retcode;
     cli_file_t dettype = 0;
     uint8_t typercg    = 1;
@@ -3598,7 +3600,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     unsigned char *hash = NULL;
     bitset_t *old_hook_lsig_matches;
     const char *filetype;
-    int cache_clean = 0, res;
+    int cache_clean = 0;
     int run_cleanup = 0;
 #if HAVE_JSON
     struct json_object *parent_property = NULL;

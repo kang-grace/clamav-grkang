@@ -108,6 +108,12 @@ static void help(void)
     printf("    --config-file=FILE       -c FILE        Read configuration from FILE\n");
     printf("\n");
     printf("Pass in - as the filename for stdin.\n");
+    #ifdef _WIN32
+    printf("Windows Service:\n");
+    printf("    --daemon                                Start in Service mode (internal)\n");
+    printf("    --install                               Install Windows Service\n");
+    printf("    --uninstall                             Uninstall Windows Service\n");
+    #endif
     printf("\n");
 }
 
@@ -325,6 +331,21 @@ int main(int argc, char **argv)
             fclose(fd);
         }
         umask(old_umask);
+
+    /* windows command line options */
+#ifdef _WIN32
+    if (optget(opts, "daemon")->enabled) {
+        logg("daemon option enabled\n");
+    }
+
+    if (optget(opts, "install")->enabled) {
+        logg("install Windows service option enabled\n");
+    }
+    
+    if (optget(opts, "uninstall")->enabled) {
+        logg("uninstall Windows service option enabled\n");
+    }
+#endif
 
 #ifndef _WIN32
         /*If the file has already been created by a different user, it will just be
