@@ -850,8 +850,6 @@ int scanfile(const char *filename, scanmem_data *scan_data, struct mem_info *inf
         if (dresult(sock, filename, virname, info) > 0) {
             info->ifiles++;
             ret = CL_VIRUS;
-        } else if (scan_data->printclean) {
-            logg("~%s: OK    \n", filename);
         }
     } else { //clamscan
         ret = cl_scandesc(fd, filename, &virname, &info->blocks, info->engine, info->options);
