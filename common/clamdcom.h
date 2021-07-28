@@ -40,8 +40,21 @@ struct RCVLN {
     char *bol;
 };
 
+enum {
+    CONT,
+    MULTI,
+    STREAM,
+    FILDES,
+    ALLMATCH,
+    MAX_SCANTYPE = ALLMATCH
+};
+
+extern char *scancmd[];
+
 int sendln(int sockd, const char *line, unsigned int len);
 void recvlninit(struct RCVLN *s, int sockd);
 int recvln(struct RCVLN *s, char **rbol, char **reol);
-
+int chkpath(const char *path, struct optstruct *clamdopts);
+int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
+int connect_clamd(struct optstruct *clamdopts);
 #endif
