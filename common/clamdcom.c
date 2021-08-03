@@ -134,22 +134,31 @@ int recvln(struct RCVLN *s, char **rbol, char **reol)
 /* 0: scan, 1: skip */
 int chkpath(const char *path, struct optstruct *clamdopts)
 {
+    int status = 0;
     const struct optstruct *opt;
+    char *real_path = NULL;
 
     if (!path) {
-        return 1;
+        status = 1;
+        goto done;
     }
 
     if ((opt = optget(clamdopts, "ExcludePath"))->enabled) {
         while (opt) {
             if (match_regex(path, opt->strarg) == 1) {
                 logg("*%s: Excluded\n", path);
-                return 1;
+                status = 1;
+                goto done;
             }
             opt = opt->nextarg;
         }
     }
-    return 0;
+
+done:
+    if (NULL != real_path) {
+        free(real_path);
+    }
+    return status;
 }
 
 /* Issues an INSTREAM command to clamd and streams the given file

@@ -432,7 +432,7 @@ int client(const struct optstruct *opts, int *infected, int *err)
             return 2;
         }
         if ((sb.st_mode & S_IFMT) != S_IFREG) scantype = STREAM;
-        if ((sockd = connect_clamd(clamdopts)) >= 0 && (ret = dsresult(sockd, scantype, NULL, &ret, NULL)) >= 0)
+        if ((sockd = connect_clamd(clamdopts)) >= 0 && (ret = dsresult(sockd, scantype, NULL, &ret, NULL, clamdopts)) >= 0)
             *infected = ret;
         else
             errors = 1;

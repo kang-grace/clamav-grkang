@@ -57,4 +57,5 @@ int recvln(struct RCVLN *s, char **rbol, char **reol);
 int chkpath(const char *path, struct optstruct *clamdopts);
 int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
 int connect_clamd(struct optstruct *clamdopts);
+int dsresult(int sockd, int scantype, const char *filename, int *printok, int *errors, struct optstruct *clamdopts);
 #endif
