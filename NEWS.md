@@ -7,30 +7,36 @@ Note: This file refers to the source tarball. Things described here may differ
 
 ClamAV 0.104.0 includes the following improvements and changes.
 
-### Major changes
+### New Requirements
 
-- CMake is now the preferred build system. Please make an effort now to migrate
-  build tooling to use CMake instead of Autotools (eg: `./configure`, `make`,
-  `sudo make install`).
+- As of ClamAV 0.104, CMake is required to build ClamAV.
 
   We have added comprehensive build instructions for using CMake to the new
   [`INSTALL.md`](INSTALL.md) file. The online documentation will also be
   updated to include CMake build instructions.
 
-  The Autotools and the Visual Studio build system have been removed.
+  The Autotools and the Visual Studio build systems have been removed.
 
-- The built-in LLVM has been removed. The bytecode runtime is now limited to
-  using an external LLVM library (preferred) or if a compatible LLVM library
-  is not available, using the internal bytecode interpreter.
+### Major changes
 
-  Using LLVM is preferred because although signature load time is slower,
-  signature runtime can be much faster, depending on how complex the bytecode
-  signature is.
+- The built-in LLVM for the bytecode runtime has been removed.
 
-  When building from source, see [`INSTALL.md`](INSTALL.md#bytecode-runtime) to
-  learn how to select bytecode runtime.
+  The bytecode interpreter is the default runtime for bytecode signatures just
+  as it was in ClamAV 0.103.
+
+  We wished to add support for newer versions of LLVM but ran out of time.
+  If you're building ClamAV from source and you wish to use LLVM instead of the
+  bytecode interpreter, you will need to supply the development libraries for
+  LLVM version 3.6.2.
+  See [the "bytecode runtime" section in `INSTALL.md`](INSTALL.md#bytecode-runtime)
+  to learn more.
 
 - There are now official ClamAV images on Docker Hub.
+
+  > _Note_: Until ClamAV 0.104.0 is released, these images are limited to
+  > "unstable" versions, which are updated daily with the latest changes in the
+  > default branch on GitHub.
+
   You can find the images on [Docker Hub under `clamav`](https://hub.docker.com/r/clamav/clamav).
 
   Docker Hub ClamAV tags:
@@ -62,14 +68,14 @@ ClamAV 0.104.0 includes the following improvements and changes.
   the larger ClamAV database images on a regular basis.
 
   For more details, see
-  [the ClamAV Docker documentation](https://github.com/Cisco-Talos/clamav-devel/blob/main/README.Docker.md).
+  [the ClamAV Docker documentation](https://docs.clamav.net/manual/Installing/Docker.html).
 
   Special thanks to Olliver Schinagl for his excellent work creating ClamAV's
   new Docker files, image database deployment tooling, and user documentation.
 
 - `clamd` and `freshclam` are now available as Windows services. To install
-  and run them, use the `--install-service` option and `net start [name]` command. 
-  
+  and run them, use the `--install-service` option and `net start [name]` command.
+
   Special thanks to Gianluigi Tiesi for his original work on this feature.
 
 ### Notable changes
@@ -92,6 +98,23 @@ patch versions do not generally introduce new options:
   BMP and JPEG 2000 files will continue to detect as CL_TYPE_GRAPHICS because
   ClamAV does not yet have BMP or JPEG 2000 format checking capabilities.
 
+- Added progress callbacks to libclamav for:
+  - database load:  `cl_engine_set_clcb_sigload_progress()`
+  - engine compile: `cl_engine_set_clcb_engine_compile_progress()`
+  - engine free:    `cl_engine_set_clcb_engine_free_progress()`
+
+  These new callbacks enable an application to monitor and estimate load,
+  compile, and unload progress. See `clamav.h` for API details.
+
+- Added progress bars to ClamScan for the signature load and engine compile
+  steps before a scan begins.
+  The start-up progress bars won't be enabled if ClamScan isn't running in a
+  terminal (i.e. stdout is not a TTY), or if any of these options are used:
+    - `--debug`
+    - `--quiet`
+    - `--infected`
+    - `--no-summary`
+
 ### Other improvements
 
 - Added the `%f` format string option to the ClamD VirusEvent feature to insert
@@ -104,12 +127,21 @@ patch versions do not generally introduce new options:
 
 - Improvements to the AutoIt extraction module. Patch courtesy of cw2k.
 
+- Added support for extracting images from Excel *.xls (OLE2) documents.
+
+- Trusted SHA256-based Authenticode hashes can now be loaded in from *.cat
+  files. For more information, visit our
+  [Authenticode documentation](https://docs.clamav.net/appendix/Authenticode.html)
+  about using *.cat files with *.crb rules to trust signed Windows executables.
+
 ### Bug fixes
 
 - Fixed a memory leak affecting logical signatures that use the "byte compare"
   feature. Patch courtesy of Andrea De Pasquale.
 
-### New Requirements
+- Fixed bytecode match evaluation for PDF bytecode hooks in PDF file scans.
+
+- Other minor bug fixes.
 
 ### Acknowledgements
 
@@ -117,11 +149,16 @@ The ClamAV team thanks the following individuals for their code submissions:
 
 - Alexander Golovach
 - Andrea De Pasquale
+- Andrew Williams
+- Arjen de Korte
 - Armin Kuster
 - Brian Bergstrand
 - cw2k
 - Duane Waddle
 - Gianluigi Tiesi
+- Jonas Zaddach
+- Kenneth Hau
+- Markus Strehle
 - Olliver Schinagl
 - Orion Poplawski
 - Sergey Valentey
@@ -664,7 +701,7 @@ changes.
   - With `clamonacc`, it is now possible to copy, move, or remove a file if the
     scan triggered an alert, just like with `clamdscan`.
   For details on how to use the new `clamonacc` On-Access scanner, please
-  refer to the user manual on [ClamAV.net](http://www.clamav.net/documents/),
+  refer to the user manual on [ClamAV.net](https://docs.clamav.net/),
   and keep an eye out for a new blog post on the topic
 - The `freshclam` database update utility has undergone a significant update.
   This includes:
@@ -681,7 +718,7 @@ changes.
   This was necessary because the UnEgg library's license includes restrictions
   limiting the commercial use of the UnEgg library.
 - The documentation has moved!
-  - Users should navigate to [ClamAV.net](http://www.clamav.net/documents/)
+  - Users should navigate to [ClamAV.net](https://docs.clamav.net/)
     to view the documentation online.
   - The documentation will continue to be provided in HTML format with each
     release for offline viewing in the `docs/html` directory.
@@ -2012,7 +2049,7 @@ The following are the key features of this release:
   phishing and malware sites. The ClamAV Project distributes a constantly
   updated Safe Browsing database, which can be automatically fetched by
   freshclam. For more information, please see freshclam.conf(5) and
-  https://www.clamav.net/documents/safebrowsing.
+  https://docs.clamav.net/faq/faq-safebrowsing.html.
 
 - New clamav-milter: The program has been redesigned and rewritten from
   scratch. The most notable difference is that the internal mode has been
@@ -3246,7 +3283,6 @@ the highest possible level.
 New mirroring mechanisms. Luca Gibelli (ClamAV) and mirror administrators
 (22 sites) are converting mirrors to new "push mirroring"
 method. It uses advanced techniques to ensure all the mirrors are up to date.
-More info: https://www.clamav.net/documents/introduction
 
 We would like to thank our donors:
 

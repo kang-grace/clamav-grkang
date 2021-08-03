@@ -18,7 +18,7 @@ cmake_policy(SET CMP0087 NEW) # support generator expressions in install(CODE) a
 #  For release candidate:     set(VERSION_SUFFIX "-rc")
 #  For release:               set(VERSION_SUFFIX "")
 string(TIMESTAMP TODAY "%Y%m%d")
-set(VERSION_SUFFIX "-devel-${TODAY}")
+set(VERSION_SUFFIX "-rc")
 
 project( ClamAV
          VERSION "0.104.0"
@@ -30,14 +30,14 @@ include(Version)
 set(PACKAGE_NAME      "${PROJECT_NAME}")
 set(PACKAGE_VERSION   "${PROJECT_VERSION}")
 set(PACKAGE_STRING    "${PROJECT_NAME} ${PROJECT_VERSION}${VERSION_SUFFIX}")
-set(PACKAGE_BUGREPORT "https://bugzilla.clamav.net/")
+set(PACKAGE_BUGREPORT "https://github.com/Cisco-Talos/clamav/issues")
 set(PACKAGE_URL       "https://www.clamav.net/")
 HexVersion(PACKAGE_VERSION_NUM ${PROJECT_VERSION_MAJOR} ${PROJECT_VERSION_MINOR} ${PROJECT_VERSION_PATCH})
 
 # libtool library versioning rules: http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-set(LIBCLAMAV_CURRENT  9)
-set(LIBCLAMAV_REVISION 6)
-set(LIBCLAMAV_AGE      0)
+set(LIBCLAMAV_CURRENT  10)
+set(LIBCLAMAV_REVISION 0)
+set(LIBCLAMAV_AGE      1)
 
 math(EXPR LIBCLAMAV_SOVERSION "${LIBCLAMAV_CURRENT} - ${LIBCLAMAV_AGE}")
 set(LIBCLAMAV_VERSION "${LIBCLAMAV_SOVERSION}.${LIBCLAMAV_AGE}.${LIBCLAMAV_REVISION}")
@@ -137,7 +137,7 @@ if(ENABLE_FUZZ)
     endif()
 endif()
 
-if(ENABLE_STATIC_LIB AND NOT ENABLE_SHARED_LIB)
+if(ENABLE_STATIC_LIB AND NOT ENABLE_SHARED_LIB AND ENABLE_UNRAR)
     # When building everything static, link in libunrar.
     set(UNRAR_LINKED 1)
 endif()
@@ -892,7 +892,6 @@ endif()
 include(CTest)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 if(ENABLE_TESTS)
-    add_subdirectory( test )
     add_subdirectory( unit_tests )
 endif()
 

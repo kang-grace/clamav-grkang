@@ -353,6 +353,9 @@ struct cl_engine {
     /* Database information from .info files */
     struct cli_dbinfo *dbinfo;
 
+    /* Signature counting, for progress callbacks */
+    size_t num_total_signatures;
+
     /* Used for memory pools */
     mpool_t *mempool;
 
@@ -369,6 +372,12 @@ struct cl_engine {
     clcb_hash cb_hash;
     clcb_meta cb_meta;
     clcb_file_props cb_file_props;
+    clcb_progress cb_sigload_progress;
+    void *cb_sigload_progress_ctx;
+    clcb_progress cb_engine_compile_progress;
+    void *cb_engine_compile_progress_ctx;
+    clcb_progress cb_engine_free_progress;
+    void *cb_engine_free_progress_ctx;
 
     /* Used for bytecode */
     struct cli_all_bc bcs;
@@ -449,6 +458,12 @@ struct cl_settings {
     clcb_hash cb_hash;
     clcb_meta cb_meta;
     clcb_file_props cb_file_props;
+    clcb_progress cb_sigload_progress;
+    void *cb_sigload_progress_ctx;
+    clcb_progress cb_engine_compile_progress;
+    void *cb_engine_compile_progress_ctx;
+    clcb_progress cb_engine_free_progress;
+    void *cb_engine_free_progress_ctx;
 
     /* Engine max settings */
     uint64_t maxembeddedpe;      /* max size to scan MSEXE for PE */
@@ -832,7 +847,7 @@ char *cli_newfilepath(const char *dir, const char *fname);
  * If the dir is not provided, the engine->tmpdir will be used.
  *
  * @param dir        Alternative temp directory (optional).
- * @param prefix  	 (Optional) Base filename for new file.
+ * @param fname  	 Filename for new file.
  * @param[out] name  Allocated filepath, must be freed by caller.
  * @param[out] fd    File descriptor of open temp file.
  */
@@ -844,6 +859,7 @@ cl_error_t cli_newfilepathfd(const char *dir, char *fname, char **name, int *fd)
  * Caller is responsible for freeing the filename.
  *
  * @param dir 	 Alternative temp directory. (optional)
+ * @param prefix (Optional) Prefix for new file tempfile.
  * @return char* filename or NULL.
  */
 char *cli_gentemp_with_prefix(const char *dir, const char *prefix);
@@ -877,7 +893,7 @@ cl_error_t cli_gentempfd(const char *dir, char **name, int *fd);
  * @param[out] fd    File descriptor of open temp file.
  * @return cl_error_t CL_SUCCESS, CL_ECREAT, or CL_EMEM.
  */
-cl_error_t cli_gentempfd_with_prefix(const char *dir, char *prefix, char **name, int *fd);
+cl_error_t cli_gentempfd_with_prefix(const char *dir, const char *prefix, char **name, int *fd);
 
 unsigned int cli_rndnum(unsigned int max);
 int cli_filecopy(const char *src, const char *dest);
@@ -922,35 +938,56 @@ struct cli_ftw_cbdata {
     void *data;
 };
 
-/*
- * return CL_BREAK to break out without an error, CL_SUCCESS to continue,
- * or any CL_E* to break out due to error.
+/**
+ * @brief Callback to process each file in a file tree walk (FTW).
+ *
  * The callback is responsible for freeing filename when it is done using it.
+ *
  * Note that callback decides if directory traversal should continue
  * after an error, we call the callback with reason == error,
  * and if it returns CL_BREAK we break.
+ *
+ * Return:
+ * - CL_BREAK to break out without an error,
+ * - CL_SUCCESS to continue,
+ * - any CL_E* to break out due to error.
  */
 typedef cl_error_t (*cli_ftw_cb)(STATBUF *stat_buf, char *filename, const char *path, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data);
 
-/*
- * returns 1 if the path should be skipped and 0 otherwise
- * uses callback data
+/**
+ * @brief Callback to determine if a path in a file tree walk (FTW) should be skipped.
+ * Has access to the same callback data as the main FTW callback function (above).
+ *
+ * Return:
+ * - 1 if the path should be skipped (i.e. to not call the callback for the given path),
+ * - 0 if the path should be processed (i.e. to call the callback for the given path).
  */
 typedef int (*cli_ftw_pathchk)(const char *path, struct cli_ftw_cbdata *data);
 
-/*
- * returns
- *  CL_SUCCESS if it traversed all files and subdirs
- *  CL_BREAK if traversal has stopped at some point
- *  CL_E* if error encountered during traversal and we had to break out
+/**
+ * @brief Traverse a file path, calling the callback function on each file
+ * within if the pathchk() check allows for it. Will skip certain file types:
+ * -
+ *
  * This is regardless of virus found/not, that is the callback's job to store.
  * Note that the callback may dispatch async the scan, so that when cli_ftw
  * returns we don't know the infected/notinfected status of the directory yet!
+ *
  * Due to this if the callback scans synchronously it should store the infected
  * status in its cbdata.
  * This works for both files and directories. It stats the path to determine
  * which one it is.
  * If it is a file, it simply calls the callback once, otherwise recurses.
+ *
+ * @param base      The top level directory (or file) path to be processed
+ * @param flags     A bitflag field for the CLI_FTW_* flag options (see above)
+ * @param maxdepth  The max recursion depth.
+ * @param callback  The cli_ftw_cb callback to invoke on each file AND directory.
+ * @param data      Callback data for the callback function.
+ * @param pathchk   A function used to determine if the callback should be run on the given file.
+ * @return cl_error_t CL_SUCCESS if it traversed all files and subdirs
+ * @return cl_error_t CL_BREAK if traversal has stopped at some point
+ * @return cl_error_t CL_E* if error encountered during traversal and we had to break out
  */
 cl_error_t cli_ftw(char *base, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk);
 
@@ -977,7 +1014,7 @@ cl_error_t cli_get_filepath_from_filedesc(int desc, char **filepath);
  * to get the real path.
  *
  * @param desc          A file path to evaluate.
- * @param char*         [out] A malloced string containing the real path.
+ * @param[out] char*    A malloced string containing the real path.
  * @return cl_error_t   CL_SUCCESS if found, else an error code.
  */
 cl_error_t cli_realpath(const char *file_name, char **real_filename);

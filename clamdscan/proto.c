@@ -211,6 +211,9 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
 
     status = CL_SUCCESS;
 done:
+    if (NULL != real_filename) {
+        free(real_filename);
+    }
     free(filename);
     return status;
 }
@@ -337,7 +340,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
             logg("*Failed to determine real filename of %s.\n", filename);
             logg("*Quarantine of the file may fail if file path contains symlinks.\n");
         } else {
-            free(filename);
+            free(filename); /* callback is responsible for free'ing filename parameter. */
             filename = real_filename;
         }
     }

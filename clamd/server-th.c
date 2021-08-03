@@ -287,7 +287,7 @@ done:
 /**
  * @brief Reload the database.
  *
- * @param[in/out] engine    The current scan engine, used to copy the settings.
+ * @param[in,out] engine    The current scan engine, used to copy the settings.
  * @param dboptions         The current database options, used to copy the options.
  * @param opts              The command line options, used to get the database directory.
  * @return cl_error_t       CL_SUCCESS if the reload thread was successfully started. This does not mean that the database has reloaded successfully.
